@@ -33,6 +33,13 @@ X_COCKROACH_LOG_DIR="/var/log/cockroach"
 X_COCKROACH_PID="/var/lock/cockroach.lock"
 
 
+# Definitions of exit status as defined by the Linux Standard Base
+EXIT_STATUS_OK=0
+EXIT_STATUS_DEAD_PID=1
+EXIT_STATUS_STOPPED=3
+EXIT_STATUS_UNKNOWN=4
+
+
 do_start() {
   # Check to see if the PID file already exists.
   PID=`cat ${X_COCKROACH_PID} 2>/dev/null`
@@ -43,7 +50,6 @@ do_start() {
     RUNNING=`ps -fp ${PID} | grep ${X_COCKROACH_EXE} | wc -l`
     if [ ${RUNNING} -eq 1 ]; then
       echo "CockroachDB is already running"
-      exit 1
     fi
   fi
 
@@ -63,7 +69,7 @@ do_start() {
   STATUS="$?"
   if [ ${STATUS} -ne 0 ]; then
     echo "CockroachDB failed to start - check ${X_COCKROACH_LOG_DIR}"
-    exit "${STATUS}"
+    exit "${EXIT_STATUS_UNKNOWN}"
   fi
 
   echo "CockroachDB started"
@@ -87,7 +93,8 @@ do_stop() {
   STATUS="$?"
   if [ ${STATUS} -ne 0 ]; then
     echo "CockroachDB failed to stop - check ${X_COCKROACH_LOG_DIR}"
-    exit "${STATUS}"
+    # Program or service status is unknown.
+    exit "${EXIT_STATUS_UNKNOWN}"
   fi
 
   # Remove lock file, which cockroach apparently does not clean up.
@@ -109,9 +116,12 @@ do_status() {
       echo "* CockroachDB running"
     else
       echo "* CockroachDB is stopped but PID file exists"
+      exit "${EXIT_STATUS_DEAD_PID}"
     fi
   else
     echo "* CockroachDB stopped"
+    # Program is stopped
+    exit "${EXIT_STATUS_STOPPED}"
   fi
 }
 
@@ -135,4 +145,4 @@ case "$1" in
     ;;
 esac
 
-exit 0
+exit "${EXIT_STATUS_OK}"
