@@ -131,7 +131,7 @@ case "$1" in
     do_status
     ;;
   *)
-    echo "Usage: cockroachdb start|stop|restart|status"
+    echo "Usage: cockroach.sh start|stop|restart|status"
     ;;
 esac
 
